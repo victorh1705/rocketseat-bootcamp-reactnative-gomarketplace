@@ -1,9 +1,9 @@
 import React, {
   createContext,
-  useState,
   useCallback,
   useContext,
   useEffect,
+  useState,
 } from 'react';
 
 import AsyncStorage from '@react-native-community/async-storage';
@@ -30,23 +30,73 @@ const CartProvider: React.FC = ({ children }) => {
 
   useEffect(() => {
     async function loadProducts(): Promise<void> {
-      // TODO LOAD ITEMS FROM ASYNC STORAGE
+      const storedProducts = await AsyncStorage.getItem(
+        '@GoMarketing:products',
+      );
+
+      if (storedProducts) {
+        setProducts(JSON.parse(storedProducts) as Product[]);
+      }
     }
 
     loadProducts();
   }, []);
 
-  const addToCart = useCallback(async product => {
-    // TODO ADD A NEW ITEM TO THE CART
-  }, []);
+  useEffect(() => {
+    async function updateStoredProducts(): Promise<void> {
+      console.log('atualizado', products);
+      await AsyncStorage.setItem(
+        '@GoMarketing:products',
+        JSON.stringify(products),
+      );
+    }
 
-  const increment = useCallback(async id => {
-    // TODO INCREMENTS A PRODUCT QUANTITY IN THE CART
-  }, []);
+    updateStoredProducts();
+  }, [products]);
 
-  const decrement = useCallback(async id => {
-    // TODO DECREMENTS A PRODUCT QUANTITY IN THE CART
-  }, []);
+  const addToCart = useCallback(
+    (product: Omit<Product, 'quantity'>) => {
+      const updatedProducts = [...products];
+      const productIndex = updatedProducts.findIndex(
+        item => item.id === product.id,
+      );
+
+      if (productIndex === -1) {
+        updatedProducts.push({ ...product, quantity: 1 });
+      } else {
+        updatedProducts[productIndex].quantity += 1;
+      }
+      setProducts(updatedProducts);
+    },
+    [products],
+  );
+
+  const increment = useCallback(
+    id => {
+      const productsToSave = products.map(prod =>
+        prod.id === id ? { ...prod, quantity: prod.quantity + 1 } : prod,
+      );
+      setProducts(productsToSave);
+    },
+    [products],
+  );
+
+  const decrement = useCallback(
+    id => {
+      let productsToSave: Product[];
+
+      if (products.find(item => item.id === id)?.quantity === 1) {
+        productsToSave = products.filter(i => i.id !== id);
+      } else {
+        productsToSave = products.map(i =>
+          i.id === id ? { ...i, quantity: i.quantity - 1 } : i,
+        );
+      }
+
+      setProducts(productsToSave);
+    },
+    [products],
+  );
 
   const value = React.useMemo(
     () => ({ addToCart, increment, decrement, products }),
