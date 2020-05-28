@@ -38,11 +38,11 @@ interface Product {
 const Cart: React.FC = () => {
   const { increment, decrement, products } = useCart();
 
-  async function handleIncrement(id: string): void {
+  async function handleIncrement(id: string): Promise<void> {
     await increment(id);
   }
 
-  async function handleDecrement(id: string): void {
+  async function handleDecrement(id: string): Promise<void> {
     await decrement(id);
   }
 
